@@ -13,6 +13,7 @@ Contents:
 
    about.rst
    installation.rst
+   tutorial.rst
    code.rst
 
 

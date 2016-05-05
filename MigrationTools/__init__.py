@@ -1,1 +1,1 @@
-from .MetadataReader import CDMMetadata
+from .MetadataReader import cdm_metadata_tsv

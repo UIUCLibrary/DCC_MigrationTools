@@ -1,4 +1,4 @@
-from MigrationTools.MetadataReader import CDMMetadata
+from MigrationTools.MetadataReader import cdm_metadata_tsv
 import pytest
 
 test_file = "tests/test.tsv"
@@ -14,7 +14,7 @@ test_columns = ("Title", "Creator", "Place of Publication", "Date", "Coverage-Sp
 @pytest.fixture()
 def CDMdata():
     '''Loads in the contentdm metadata tsv file and creates a CDMMetadata object'''
-    return CDMMetadata(test_file)
+    return cdm_metadata_tsv(test_file)
 
 
 def test_CDMMetadata_has_column(CDMdata):
@@ -35,4 +35,4 @@ def test_CDMMetadata_columns(CDMdata):
 
 def test_CDMMetadata_bad_file():
     with pytest.raises(FileNotFoundError):
-        CDMMetadata("badfile.txt")
+        cdm_metadata_tsv("badfile.txt")

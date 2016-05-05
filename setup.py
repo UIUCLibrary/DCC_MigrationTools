@@ -1,30 +1,21 @@
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
 import sys
 
+from setuptools.command.test import test as TestCommand
 
-class Tox(TestCommand):
-    user_options = [('tox-args=', 'a', "Arguments to pass to tox")]
+
+class PyTest(TestCommand):
+    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.tox_args = None
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
+        self.pytest_args = []
 
     def run_tests(self):
         #import here, cause outside the eggs aren't loaded
-        import tox
-        import shlex
-        args = self.tox_args
-        if args:
-            args = shlex.split(self.tox_args)
-        errno = tox.cmdline(args=args)
+        import pytest
+        errno = pytest.main(self.pytest_args)
         sys.exit(errno)
-
 
 
 setup(
@@ -34,10 +25,9 @@ setup(
     url='',
     license='',
     test_suite="tests",
-    tests_require=['tox'],
-    cmdclass = {'test': Tox},
-    include_package_data=True,
+    tests_require=['pytest'],
+    cmdclass = {'test': PyTest},
     author='Henry Borchers',
     author_email='hborcher@illinois.edu',
-    description='Tools for migration'
+    description='Tools for migration',
 )

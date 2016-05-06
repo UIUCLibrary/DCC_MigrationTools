@@ -14,6 +14,7 @@ class PyTest(TestCommand):
     def run_tests(self):
         #import here, cause outside the eggs aren't loaded
         import pytest
+        # self.pytest_args.append("--doctest-modules")
         errno = pytest.main(self.pytest_args)
         sys.exit(errno)
 

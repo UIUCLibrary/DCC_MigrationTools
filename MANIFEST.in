@@ -1,4 +1,2 @@
 recursive-include tests *
-include docs make.bat
-include docs Makefile
-recursive-include docs/source *
+recursive-include docs *

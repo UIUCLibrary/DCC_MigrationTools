@@ -14,7 +14,8 @@ If you wanted to view all the data in an exported .tsv file, you could try somet
 
 .. testcode::
 
-    for record in cdm_metadata_tsv("tests/test.tsv"):
+    my_metadata = cdm_metadata_tsv("tests/test.tsv")
+    for record in my_metadata:
          print(record)
 
 Resulting in something like this ..

@@ -23,14 +23,10 @@ class _CDM_md_base:
         return False
 
     def get_record(self, contentDM_number):
-        """
-        Get a single record from a ContentDM number
+        """Get a single record from a ContentDM number
 
         :param contentDM_number: The ContentDM number
         :returns:   dict -- Single item record
-
-
-
         """
         for record in self.records:
             if record['CONTENTdm number'] == str(contentDM_number):
@@ -55,18 +51,19 @@ class _CDM_md_base:
 class cdm_metadata_tsv(_CDM_md_base):
     """Use for reading the data found in an ContentDM exported TSV file.
 
-        Args:
-          tsv_file: ContentDM Metadata TSV file name
 
-        An example of how you can load your tsv file is as follows
+    Args:
+      tsv_file: ContentDM Metadata TSV file name
 
-            >>> my_metadata = cdm_metadata_tsv("tests/test.tsv")
+    **NOTE: The tsv file must be encoded as utf-8 to work properly!**
 
+    Example:
 
+        >>> my_metadata = cdm_metadata_tsv("tests/test.tsv")
 
 
     """
-    def has_column(self, metadata_type):
+    def has_field(self, metadata_type):
         """
         Used for find out if the TSV file imported includes a certain metadata field.
 
@@ -75,26 +72,42 @@ class cdm_metadata_tsv(_CDM_md_base):
 
 
 
-        Examples:
+        Example usage:
 
+            Let's say you have the following .tsv file amd you want to know if you have the tsv files contains the
+            field "filename" or "CONTENTdm file name" but you to don't want to open the file in Excel.
 
-            Assuming that the metadata file doesn't have a "filename" field ...
+            +------------------+---------------------+-------------------------------------------+
+            | CONTENTdm number | CONTENTdm file name | Title                                     |
+            +==================+=====================+===========================================+
+            | 41               | 1001.jp2            | Africa                                    |
+            +------------------+---------------------+-------------------------------------------+
+            | 42               | 1002.jp2            | Umgebung von Ango-Ango im Anschlusse an   |
+            |                  |                     | Vivi am Kongo...der Ã–sterr.              |
+            |                  |                     | Kongo-Expedition Oskar Baumann....        |
+            +------------------+---------------------+-------------------------------------------+
+            | 50               | 101.jp2             | Route von Ango-Ango nach Leopoldville.... |
+            +------------------+---------------------+-------------------------------------------+
+
+            You could find out if it has the fields this way.
 
                 .. doctest::
 
                     >>> from MigrationTools import cdm_metadata_tsv
                     >>> my_metadata = cdm_metadata_tsv("tests/test.tsv")
-                    >>> my_metadata.has_column("filename")
+                    >>> my_metadata.has_field("filename")
                     False
 
-            But it does have "CONTENTdm file name" field ...
+            As you'd expect, it doesn't have a field called "filename" so you get False back.
 
                 .. doctest::
 
                     >>> from MigrationTools import cdm_metadata_tsv
                     >>> my_metadata = cdm_metadata_tsv("tests/test.tsv")
-                    >>> my_metadata.has_column("CONTENTdm file name")
+                    >>> my_metadata.has_field("CONTENTdm file name")
                     True
+
+            However if you ask for "CONTENTdm file name", you recieve True back.
 
         """
         try:
@@ -111,7 +124,6 @@ class cdm_metadata_tsv(_CDM_md_base):
             If you wanted to know all the columns found you could try this ...
 
             .. doctest::
-               :options: -ELLIPSIS, +NORMALIZE_WHITESPACE
 
                >>> from MigrationTools import cdm_metadata_tsv
                >>> my_metadata = cdm_metadata_tsv("tests/test.tsv")
@@ -123,3 +135,26 @@ class cdm_metadata_tsv(_CDM_md_base):
         """
         keys = sorted(self.records[0].keys())
         return keys
+
+    def with_fields(self, *requested_fields):
+        """Generator function that returns all the records with only requested fields
+
+        :param requested_fields: fields requested
+        :return: List of records as dictionaries
+
+        For example::
+
+            my_metadata = cdm_metadata_tsv("tests/test.tsv")
+            for record in my_metadata.with_fields("Title", "Creator"):
+                print(record)
+
+        """
+
+        for field in requested_fields:
+            if not self.has_field(field):
+                raise KeyError
+
+
+        for record in self.records:
+            yield {k: record[k] for k in (requested_fields)}
+

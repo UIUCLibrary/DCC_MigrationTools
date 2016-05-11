@@ -1,7 +1,7 @@
 import pytest
 import tempfile
 import os
-from MigrationTools.DeligateCopy import TempCopy
+from MigrationTools import TempCopy
 
 
 @pytest.fixture(scope="module")

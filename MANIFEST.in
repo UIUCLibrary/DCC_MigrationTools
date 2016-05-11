@@ -1,2 +1,3 @@
-recursive-include tests *
-recursive-include docs *
+include *.ini
+include tests *.py *.tsv
+recursive-include docs *.*

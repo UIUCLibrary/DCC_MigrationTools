@@ -13,7 +13,7 @@ test_columns = ("Title", "Creator", "Place of Publication", "Date", "Coverage-Sp
 
 @pytest.fixture
 def CDM_base(request):
-    '''Loads in the contentdm metadata tsv file and creates a _CDM_md_base object'''
+    """Loads in the contentdm metadata tsv file and creates a _CDM_md_base object"""
     return _CDM_md_base(test_file)
 
 

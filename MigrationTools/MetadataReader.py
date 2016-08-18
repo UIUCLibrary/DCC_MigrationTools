@@ -278,6 +278,9 @@ class cdm_metadata_xml(_CDM_md_base):
                 return record
         raise IndexError("No record for \"{}\" was not found in the metadata".format(contentDM_number))
 
+    def __iter__(self):
+        return iter(self.records)
+
 
 def CDM_Metadata_factory(filename):
     ext = os.path.splitext(filename)[1]
@@ -293,6 +296,9 @@ class Record:
     def __init__(self, data: dict):
         self.data = data
         self._pages = []
+
+    def __str__(self):
+        return str(dict(self.data))
 
     def __getitem__(self, item):
         if isinstance(self.data[item], list):

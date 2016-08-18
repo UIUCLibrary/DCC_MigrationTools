@@ -45,12 +45,16 @@ class CachedFinder:
         for item in os.walk(path):
             self._tree.append(item)
 
-    def find_file(self, filename):
+    def find_file(self, filename, case_insensitive=False):
         results = []
         for root, dirs, files in self._tree:
             for file_ in files:
-                if file_ == filename:
-                    results.append(os.path.join(root, file_))
+                if case_insensitive:
+                    if file_.lower() == filename.lower():
+                        results.append(os.path.join(root, file_))
+                else:
+                    if file_ == filename:
+                        results.append(os.path.join(root, file_))
         return results
 
     def regex_matches(self, regex):

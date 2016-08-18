@@ -334,7 +334,7 @@ class Record:
 
     @property
     def pages(self):
-        return self._pages
+        return [dict(x) for x in self._pages]
 
 
 class CDM_Metadata:

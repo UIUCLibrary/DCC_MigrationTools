@@ -21,7 +21,7 @@ class PyTest(TestCommand):
 
 setup(
     name='MigrationTools',
-    version='0.1.1',
+    version='0.1.2',
     packages=['MigrationTools', 'tests'],
     url='',
     license='',

@@ -59,7 +59,7 @@ def test_get_compound_record_has_subpages(CDMdata):
     record = CDMdata.get_record(155)
     assert isinstance(record.pages, list)
     assert len(record.pages) == 2
-    assert isinstance(record.pages[0], defaultdict)
+    assert isinstance(record.pages[0], dict)
 
 
 def test_compound_record_get_subpage(CDMdata):

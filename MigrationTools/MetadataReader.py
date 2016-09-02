@@ -162,7 +162,7 @@ class cdm_metadata_tsv(_CDM_md_base):
         records = []
         with open(tsv_file, 'r', encoding="utf-8") as f:
 
-            data = csv.DictReader(f, delimiter='\t')
+            data = csv.DictReader(f, dialect="excel-tab")
             for row in data:
                 records.append(row)
 

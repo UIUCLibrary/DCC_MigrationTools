@@ -20,7 +20,3 @@ node {
         
     }
 }
-
-stage("Deploying"){
-input("Do you wish to deploy")    
-}

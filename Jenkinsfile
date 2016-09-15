@@ -14,6 +14,12 @@ node {
     }
 }
 node {
+    stage("Generating documentation"){
+        dir('docs')
+            sh 'make html'
+            archiveArtifacts artifacts: 'build/html/*.*'
+        }
+    }
     stage("Packaging source"){
         sh '$PYTHON3 setup.py sdist'
         archiveArtifacts artifacts: 'dist/*.tar.gz'

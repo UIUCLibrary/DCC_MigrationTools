@@ -15,7 +15,7 @@ node {
 }
 node {
     stage("Generating documentation"){
-        dir('docs')
+        dir('docs'){
             sh 'make html'
             archiveArtifacts artifacts: 'build/html/*.*'
         }

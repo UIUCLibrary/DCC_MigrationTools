@@ -19,8 +19,8 @@ node {
         unstash 'pysource'
         // sh '$TOX docs'
         sh '$PYTHON3 setup.py build_sphinx'
-        dir('docs/build/html'){
-            stash includes: '*', name: 'sphinx_docs'
+        dir('docs/build/'){
+            stash includes: '**', name: 'sphinx_docs'
         }
     }
 }

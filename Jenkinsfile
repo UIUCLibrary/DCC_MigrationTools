@@ -12,7 +12,11 @@ node {
         sh '$TOX'
         junit '**/junit-*.xml'
     }
+}
+
+node {
     stage("Generating Documentation"){
+        unstash 'pysource'
         sh '$TOX docs'
         archiveArtifacts artifacts: '.tox/docs/tmp/html/*.*'
     }

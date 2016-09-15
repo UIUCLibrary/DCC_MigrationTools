@@ -26,7 +26,6 @@ setup(
     url='',
     license='',
     test_suite="tests",
-    setup_requires=['Sphinx'],
     tests_require=['pytest'],
     cmdclass = {'test': PyTest},
     author='Henry Borchers',

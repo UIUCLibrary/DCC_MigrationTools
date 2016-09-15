@@ -21,13 +21,10 @@ node {
             echo 'Creating virtualenv for generating docs'
             sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
             echo 'Loading virtualenv'
-            sh '. ./venv_doc/bin/activate && which python'
-            sh 'which python'
-            echo 'Installing Sphinx into virtual env'
-            sh 'pip install Sphinx'
+            sh '. ./venv_doc/bin/activate && pip install Sphinx && python setup.py build_sphinx'
 
             // sh '$TOX docs'
-            sh 'python setup.py build_sphinx'
+            // sh 'python setup.py build_sphinx'
             dir('docs/build'){
                 stash includes: '**', name: 'sphinx_docs'
             }

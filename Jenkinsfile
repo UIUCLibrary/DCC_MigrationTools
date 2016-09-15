@@ -17,7 +17,7 @@ node {
 node {
     try {
         stage("Generating Documentation"){
-            sh '$PYTHON3 -m virtualenv venv_doc'
+            sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
             sh 'source venv_doc/bin/activate'
             sh 'pip install Sphinx'
 
@@ -38,7 +38,6 @@ node {
             //    archiveArtifacts artifacts: 'DCC_MigrationToolsDocs.tar.gz'
             //}
             sh 'deactivate'
-            sh 'rmvirtualenv venv_doc'
         }
 
     } catch(error) {

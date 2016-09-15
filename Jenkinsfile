@@ -21,7 +21,7 @@ node {
     }
 
     stage("Packaging Documentation"){
-        dir(''.tox/docs/tmp/'){
+        dir('.tox/docs/tmp/'){
             sh 'tar -czvf DCC_MigrationToolsDocs.tar.gz html'
             archiveArtifacts artifacts: 'DCC_MigrationToolsDocs.tar.gz'
         }

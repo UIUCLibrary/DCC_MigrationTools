@@ -16,10 +16,8 @@ node {
 
 node {
     stage("Generating Documentation"){
-        dir('docs'){
-            sh 'pwd'
-            sh 'make html'
-            archiveArtifacts artifacts: 'build/html/*.*'
+            sh 'make docs'
+            archiveArtifacts artifacts: 'docs/build/html/*.*'
         }
     }
     stage("Packaging source"){

@@ -23,7 +23,7 @@ node {
 
             unstash 'pysource'
             // sh '$TOX docs'
-            sh '$PYTHON3 setup.py build_sphinx'
+            sh 'python setup.py build_sphinx'
             dir('docs/build'){
                 stash includes: '**', name: 'sphinx_docs'
             }

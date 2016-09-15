@@ -18,7 +18,7 @@ node {
     stage("Generating Documentation"){
         unstash 'pysource'
         sh '$TOX docs'
-        tar -czvf DCC_MigrationToolsDocs.tar.gz .tox/docs/tmp/html/
+        tar -czvf DCC_MigrationToolsDocs.tar.gz .tox/docs/tmp/html
         archiveArtifacts artifacts: 'DCC_MigrationToolsDocs.tar.gz'
     }
     stage("Packaging source"){

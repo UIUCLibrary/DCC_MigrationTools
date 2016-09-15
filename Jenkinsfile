@@ -17,7 +17,6 @@ node {
 node {
     try {
         stage("Generating Documentation"){
-            sh 'rm DCC_MigrationToolsDocs*.tar.gz'
             unstash 'pysource'
             echo 'Creating virtualenv for generating docs'
             sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'

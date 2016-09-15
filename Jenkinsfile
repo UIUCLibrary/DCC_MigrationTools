@@ -22,11 +22,11 @@ node {
             sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
             echo 'Loading virtualenv'
             sh 'source venv_doc/bin/activate'
+            sh 'which python'
             echo 'Installing Sphinx into virtual env'
             sh 'pip install Sphinx'
 
             // sh '$TOX docs'
-            sh 'which python'
             sh 'python setup.py build_sphinx'
             dir('docs/build'){
                 stash includes: '**', name: 'sphinx_docs'

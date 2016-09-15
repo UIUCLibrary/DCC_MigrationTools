@@ -21,7 +21,7 @@ node {
             echo 'Creating virtualenv for generating docs'
             sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
             echo 'Loading virtualenv'
-            sh 'source venv_doc/bin/activate'
+            sh '. ./venv_doc/bin/activate'
             sh 'which python'
             echo 'Installing Sphinx into virtual env'
             sh 'pip install Sphinx'

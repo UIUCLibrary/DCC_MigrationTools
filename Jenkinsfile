@@ -17,12 +17,16 @@ node {
 node {
     try {
         stage("Generating Documentation"){
+            unstash 'pysource'
+            echo 'Creating virtualenv for generating docs'
             sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
+            echo 'Loading virtualenv'
             sh 'source venv_doc/bin/activate'
+            echo 'Installing Sphinx into virtual env'
             sh 'pip install Sphinx'
 
-            unstash 'pysource'
             // sh '$TOX docs'
+            sh 'which python'
             sh 'python setup.py build_sphinx'
             dir('docs/build'){
                 stash includes: '**', name: 'sphinx_docs'

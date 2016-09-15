@@ -3,7 +3,6 @@ import os
 import warnings
 from abc import abstractmethod
 from collections import namedtuple, defaultdict
-from typing import Union
 import re
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element
@@ -188,7 +187,7 @@ def has_children(element: Element):
         return False
 
 
-def build_branch(branch: str, element: Element) -> Union[list, str]:
+def build_branch(branch: str, element: Element):
     results = dict()
     children = element.findall("{}".format(branch))
     if len(children) > 1:

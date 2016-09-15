@@ -18,9 +18,15 @@ node {
     stage("Generating Documentation"){
         unstash 'pysource'
         sh '$TOX docs'
-        sh 'tar -czvf DCC_MigrationToolsDocs.tar.gz .tox/docs/tmp/html'
-        archiveArtifacts artifacts: 'DCC_MigrationToolsDocs.tar.gz'
     }
+
+    stage("Packaging Documentation"){
+        dir(''.tox/docs/tmp/'){
+            sh 'tar -czvf DCC_MigrationToolsDocs.tar.gz html'
+            archiveArtifacts artifacts: 'DCC_MigrationToolsDocs.tar.gz'
+        }
+    }
+
     stage("Packaging source"){
         sh '$PYTHON3 setup.py sdist'
         archiveArtifacts artifacts: 'dist/*.tar.gz'

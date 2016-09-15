@@ -13,6 +13,7 @@ node {
         junit '**/junit-*.xml'
     }
 }
+
 node {
     stage("Generating documentation"){
         dir('docs'){

@@ -16,8 +16,8 @@ node {
 
 node {
     stage("Generating Documentation"){
-        sh 'make docs'
-        archiveArtifacts artifacts: 'docs/build/html/*.*'
+        sh '$TOX docs'
+        archiveArtifacts artifacts: '.tox/docs/tmp/html/*.*'
     }
     stage("Packaging source"){
         sh '$PYTHON3 setup.py sdist'

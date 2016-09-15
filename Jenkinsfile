@@ -16,9 +16,8 @@ node {
 
 node {
     stage("Generating Documentation"){
-            sh 'make docs'
-            archiveArtifacts artifacts: 'docs/build/html/*.*'
-        }
+        sh 'make docs'
+        archiveArtifacts artifacts: 'docs/build/html/*.*'
     }
     stage("Packaging source"){
         sh '$PYTHON3 setup.py sdist'

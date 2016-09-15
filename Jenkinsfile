@@ -18,7 +18,7 @@ node {
     stage("Generating Documentation"){
         unstash 'pysource'
         sh '$TOX docs'
-        archiveArtifacts artifacts: '.tox/docs/tmp/html/*.*'
+        archiveArtifacts artifacts: '.tox/docs/tmp/html/**'
     }
     stage("Packaging source"){
         sh '$PYTHON3 setup.py sdist'

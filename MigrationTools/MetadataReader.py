@@ -10,6 +10,8 @@ Items = namedtuple("collection", ['name', 'files'])
 
 REMOVE_WSPACE_PATTERN = "\n\s*"
 
+FullRecord = namedtuple("FullRecord", ["object_level", "item_level"])
+
 class _CDM_md_base:
     def __init__(self, filename):
         self.filename = filename
@@ -337,14 +339,69 @@ class Record:
 
 
 class CDM_Metadata:
-    def __init__(self, tsv_file=None, xml_file=None):
+    def __init__(self, *files):
+        tsv_file = None
+        xml_file = None
+
+        for file in files:
+            ext = os.path.splitext(file)[1].lower()
+            if ext == ".tsv":
+                tsv_file = file
+            elif ext == ".xml":
+                xml_file = file
+            else:
+                raise TypeError("{} is an unsupported file type".format(file))
 
         if tsv_file is not None:
             self.tsv_metadata = cdm_metadata_tsv(tsv_file)
+        else:
+            self.tsv_metadata = None
 
         if xml_file is not None:
             self.xml_metadata = cdm_metadata_xml(xml_file)
+        else:
+            self.xml_metadata = None
+
+        # join if both Xml and TSV are given
+        if self.tsv_metadata is not None and self.xml_metadata is not None:
+            self._data = CDM_Metadata.create_full(xml_metadata=self.xml_metadata, tsv_metadata=self.tsv_metadata)
+
+        # if only a tsv file is given, Full record with only the object level data and nothing for the page/item level
+        elif self.tsv_metadata is not None:
+            self._data = CDM_Metadata.create_full(tsv_metadata=self.tsv_metadata)
+
+
+        # if only a xml file is given, use only that data
+        elif self.xml_metadata is not None:
+            self._data = CDM_Metadata.create_full(xml_metadata=self.xml_metadata)
+        else:
+            raise AttributeError("Need a valid xml, tsv or both")
 
     def __iter__(self):
-        # TODO
-        pass
+        return iter(self._data)
+
+
+    @staticmethod
+    def create_full(xml_metadata=None, tsv_metadata=None):
+        if xml_metadata is None and tsv_metadata is None:
+            raise ValueError("Needs either xml_metadata or tsv_metadata")
+
+        full_records = []
+        if xml_metadata is not None:
+            if tsv_metadata is not None:
+                for record in xml_metadata:
+                    pages = []
+                    item = tsv_metadata.get_record(int(record['cdmid']))
+                    if len(record.pages) > 0:
+                        for page in record.pages:
+                            pages.append(page)
+
+                    full_records.append(FullRecord(item, pages))
+            else:
+                for record in xml_metadata:
+                    pages = record.pages
+                    item = record
+                    full_records.append(FullRecord(item, pages))
+        elif tsv_metadata is not None:
+            full_records = [FullRecord(rec, None) for rec in tsv_metadata]
+        return full_records

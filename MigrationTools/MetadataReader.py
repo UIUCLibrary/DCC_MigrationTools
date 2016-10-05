@@ -10,7 +10,33 @@ Items = namedtuple("collection", ['name', 'files'])
 
 REMOVE_WSPACE_PATTERN = "\n\s*"
 
-FullRecord = namedtuple("FullRecord", ["object_level", "item_level"])
+# FullRecord = namedtuple("FullRecord", ["object_level", "item_level"])
+
+
+class FullRecord:
+    def __init__(self, object_level, item_level):
+
+        self.object_level = object_level
+        self.item_level = item_level
+
+    @property
+    def fields(self):
+        fields = set()
+        n = self.object_level.fields
+        fields.update(n)
+        if self.item_level is not None:
+            for page in self.item_level:
+                # keys =
+                fields.update(page.keys())
+        return fields
+
+    def __str__(self):
+        return str({'object_level': str(self.object_level), 'item_level': str(self.item_level)})
+
+    def __repr__(self):
+        object_level = 'object_level : {}\n'.format(self.object_level)
+        item_level = 'item_level   : {}'.format("None" if self.item_level is None else ("\n{}".format(" " * 15).join([str(x) for x in self.item_level])))
+        return object_level + item_level + "\n"
 
 class _CDM_md_base:
     def __init__(self, filename):
@@ -299,7 +325,9 @@ class Record:
         self._pages = []
 
     def __str__(self):
-        return str(dict(self.data))
+        return str({"data": self.data, 'pages': self.pages})
+
+
 
     def __getitem__(self, item):
         if isinstance(self.data[item], list):
@@ -324,8 +352,9 @@ class Record:
     def add_page(self, page):
         self._pages.append(page)
 
+    @property
     def fields(self):
-        return self.data.keys()
+        return list(self.data.keys())
 
     def has_field(self, fieldname):
         if fieldname in self.data.keys():
@@ -377,6 +406,19 @@ class CDM_Metadata:
         else:
             raise AttributeError("Need a valid xml, tsv or both")
 
+    @property
+    def fields(self):
+        all_fields = set()
+        for record in self._data:
+            all_fields.update(record.object_level.fields)
+        return list(all_fields)
+
+    def has_field(self, field):
+        return field in self.fields
+
+    def __len__(self):
+        return len(self._data)
+
     def __iter__(self):
         return iter(self._data)
 
@@ -396,12 +438,12 @@ class CDM_Metadata:
                         for page in record.pages:
                             pages.append(page)
 
-                    full_records.append(FullRecord(item, pages))
+                    full_records.append(FullRecord(Record(item), pages))
             else:
                 for record in xml_metadata:
                     pages = record.pages
                     item = record
                     full_records.append(FullRecord(item, pages))
         elif tsv_metadata is not None:
-            full_records = [FullRecord(rec, None) for rec in tsv_metadata]
+            full_records = [FullRecord(Record(rec), None) for rec in tsv_metadata]
         return full_records

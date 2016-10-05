@@ -3,7 +3,7 @@ import re
 import pickle
 
 
-def check_valid(func):
+def check_valid_path(func):
     def call_func(*args, **kwargs):
         path = args[1]
         if not os.path.exists(path):
@@ -12,7 +12,7 @@ def check_valid(func):
         return func(*args, **kwargs)
     return call_func
 
-@check_valid
+@check_valid_path
 def find_file_locally(filename, path):
     for root, dirs, files in os.walk(path):
         for file_ in files:
@@ -28,7 +28,7 @@ class PickeledFinder:
         if self._cached_file is not None:
             self.load(self._cached_file)
 
-    @check_valid
+    @check_valid_path
     def map_path(self, path):
         self._tree = list(os.walk(path))
 
@@ -50,7 +50,7 @@ class PickeledFinder:
 
 
 class CachedFinder:
-    @check_valid
+    @check_valid_path
     def __init__(self, path):
         self._tree = []
         for item in os.walk(path):

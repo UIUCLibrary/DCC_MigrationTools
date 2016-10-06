@@ -2,7 +2,7 @@ import csv
 import os
 import warnings
 from abc import abstractmethod
-from collections import namedtuple, defaultdict
+from collections import namedtuple, defaultdict, MutableMapping
 import re
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element
@@ -13,11 +13,83 @@ REMOVE_WSPACE_PATTERN = "\n\s*"
 # FullRecord = namedtuple("FullRecord", ["object_level", "item_level"])
 
 
-class FullRecord:
-    def __init__(self, object_level, item_level):
-
+class FullRecord(MutableMapping):
+    def __init__(self, object_level, item_level: list):
+        assert isinstance(item_level, list)
         self.object_level = object_level
-        self.item_level = item_level
+        self._item_level = item_level
+        self.additional_info = dict()
+        self._combined = dict()
+
+    def __iter__(self):
+        return self._combined_dict().__iter__()
+
+    def __delitem__(self, key):
+        return self.additional_info.__delitem__(key)
+
+    def __setitem__(self, key, value):
+        self.additional_info[key] = value
+
+    def __getitem__(self, key):
+        result = self._combined_dict().__getitem__(key)
+        if isinstance(result, list):
+            return ";".join(result)
+        return result
+
+    def __len__(self):
+        # if self.item_level is not None and len(self.item_level) > 0:
+        #     return len(self.item_level)
+        # else:
+        #     return 1
+        return len(self._combined_dict())
+
+    @property
+    def item_level(self):
+        # return {k: ";".join(v) for k,v in self._item_level.items()}
+        # return self._flatten(self._item_level)
+        return self._item_level
+        # if self._item_level is not None:
+        #     return self._item_level
+        # else:
+        #     return []
+
+    def __str__(self):
+        return str({'object_level': str(self.object_level), 'item_level': str(self.item_level)})
+
+    def _combined_dict(self):
+        if self.item_level is not None and len(self._item_level) > 0:
+            # FIXME: something missing for getting a dictionary
+            combined = self._flatten(self._item_level)
+
+            # combined_items = defaultdict(str)
+            # for item in self.item_level:
+
+                # for key, value in item.data:
+                #     combined_items[key] = combined_items[key]
+                # combined_items[item]
+            # return {**self.object_level, **self.additional_info}
+            # self._combined = {**self.object_level, **combined, **self.additional_info}
+
+            return {**self.object_level, **combined, **self.additional_info}
+        else:
+            # self._combined = {**self.object_level, **self.additional_info}
+            return {**self.object_level, **self.additional_info}
+
+    def _flatten(self, full_list):
+        combined = {k: v for d in full_list for k, v in d.items()}
+        combined = {k: ";".join(v) for k, v in combined.items()}
+        return combined
+
+    def __repr__(self):
+        object_level = 'object_level : {}\n'.format(self.object_level)
+        item_level = 'item_level   : {}\n'.format("None" if self.item_level is None
+                                                  else ("\n{}".format(" " * 15).join([repr(x)
+                                                                                      for x
+                                                                                      in self.item_level])))
+        # item_level = 'item_level   : {}\n'.format("None" if self.item_level is None else ("\n{}".format(" " * 15).join([str(x) for x in self.item_level])))
+        additional = 'additional   : {}'.format(self.additional_info)
+        return object_level + item_level + additional + "\n"
+        # return str(self._combined_dict())
 
     @property
     def fields(self):
@@ -29,14 +101,6 @@ class FullRecord:
                 # keys =
                 fields.update(page.keys())
         return fields
-
-    def __str__(self):
-        return str({'object_level': str(self.object_level), 'item_level': str(self.item_level)})
-
-    def __repr__(self):
-        object_level = 'object_level : {}\n'.format(self.object_level)
-        item_level = 'item_level   : {}'.format("None" if self.item_level is None else ("\n{}".format(" " * 15).join([str(x) for x in self.item_level])))
-        return object_level + item_level + "\n"
 
 class _CDM_md_base:
     def __init__(self, filename):
@@ -264,6 +328,8 @@ class cdm_metadata_xml(_CDM_md_base):
             #     record[element.tag] = current_value + element.text
 
         pages_records = xml_element_record.findall("structure/page")
+        if len(pages_records) == 0:
+            pages_records = xml_element_record.findall("structure/node/page")
         new_record = Record(metadata)
         for page in pages_records:
             new_record.add_page(cdm_metadata_xml.build_page_metadata(page))
@@ -319,15 +385,38 @@ def CDM_Metadata_factory(filename):
         raise Exception("Files with a {} extension are not supported".format(ext))
 
 
-class Record:
+class Record(MutableMapping):
     def __init__(self, data: dict):
         self.data = data
         self._pages = []
 
     def __str__(self):
-        return str({"data": self.data, 'pages': self.pages})
+        return str(self._combined_dict())
 
+    def __len__(self):
+        return len(self._combined_dict())
 
+    def __repr__(self):
+        combined = self._combined_dict()
+        text = ""
+        for k,v in combined.items():
+            text += "'{}':{}".format(k, "\n".join(v))
+        return text
+        # return combined
+
+    def __iter__(self):
+        return self._combined_dict().__iter__()
+
+    def __delitem__(self, key):
+        raise NotImplementedError("Unable to delete this information")
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError("Unable to modify this information")
+
+    def _combined_dict(self):
+        combined = {k: v for d in self.pages for k, v in d.items()}
+        everything = {**self.data, **combined}
+        return everything
 
     def __getitem__(self, item):
         if isinstance(self.data[item], list):
@@ -372,14 +461,22 @@ class CDM_Metadata:
         tsv_file = None
         xml_file = None
 
+        if len(files) > 2:
+            raise AttributeError("Current limit of 2 files to merge. Maximum 1 xml and 1 tsv file.")
         for file in files:
             ext = os.path.splitext(file)[1].lower()
             if ext == ".tsv":
-                tsv_file = file
+                if tsv_file is None:
+                    tsv_file = file
+                else:
+                    AttributeError("Only one tsv is supported at this time")
             elif ext == ".xml":
-                xml_file = file
+                if xml_file is None:
+                    xml_file = file
+                else:
+                    AttributeError("Only one xml is supported at this time")
             else:
-                raise TypeError("{} is an unsupported file type".format(file))
+                raise AttributeError("{} is an unsupported file type".format(file))
 
         if tsv_file is not None:
             self.tsv_metadata = cdm_metadata_tsv(tsv_file)
@@ -409,8 +506,12 @@ class CDM_Metadata:
     @property
     def fields(self):
         all_fields = set()
+        all_fields.add('group_id')
+
         for record in self._data:
-            all_fields.update(record.object_level.fields)
+            all_fields.update(record.fields)
+
+            # all_fields.update(record.object_level.fields)
         return list(all_fields)
 
     def has_field(self, field):
@@ -420,11 +521,27 @@ class CDM_Metadata:
         return len(self._data)
 
     def __iter__(self):
-        return iter(self._data)
+        for i, object_record in enumerate(self._data):
+            object_record['group_id'] = i
+            yield object_record
+            for item in object_record.item_level:
+                santized = {k: ";".join(v) for k, v in item.items()}
+
+                object_info = dict(object_record.object_level)
+                for key in santized.keys():
+                    if key in object_info.keys():
+                        del object_info[key]
+                # object_info = {k:v for k, v in object_record if k not in santized.keys()}
+                matching = self.tsv_metadata.get_record(int(santized['pageptr']))
+                item = {**object_info, **santized, **matching}
+                item['group_id'] = i
+                yield item
+
+        # return iter(self._data)
 
 
     @staticmethod
-    def create_full(xml_metadata=None, tsv_metadata=None):
+    def create_full(xml_metadata=None, tsv_metadata=None)->FullRecord:
         if xml_metadata is None and tsv_metadata is None:
             raise ValueError("Needs either xml_metadata or tsv_metadata")
 
@@ -433,17 +550,20 @@ class CDM_Metadata:
             if tsv_metadata is not None:
                 for record in xml_metadata:
                     pages = []
-                    item = tsv_metadata.get_record(int(record['cdmid']))
+                    cdmid = int(record['cdmid'])
+                    object_level = tsv_metadata.get_record(cdmid)
                     if len(record.pages) > 0:
                         for page in record.pages:
+                            # item = tsv_metadata.get_record(int(page['pageptr'][0]))
                             pages.append(page)
 
-                    full_records.append(FullRecord(Record(item), pages))
+                    full_records.append(FullRecord(Record(object_level), pages))
             else:
                 for record in xml_metadata:
                     pages = record.pages
-                    item = record
-                    full_records.append(FullRecord(item, pages))
+                    object_level = record
+                    full_records.append(FullRecord(object_level, pages))
         elif tsv_metadata is not None:
-            full_records = [FullRecord(Record(rec), None) for rec in tsv_metadata]
+            full_records = [FullRecord(Record(rec), []) for rec in tsv_metadata]
+            # full_records = [FullRecord(Record(rec), None) for rec in tsv_metadata]
         return full_records

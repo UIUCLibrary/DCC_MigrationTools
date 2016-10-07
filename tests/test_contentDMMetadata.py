@@ -2,11 +2,15 @@
 import os
 
 import pytest
-from MigrationTools.MetadataReader import CDM_Metadata
+from MigrationTools import CDM_Metadata
+import MigrationTools
 
 test_file1_tsv = os.path.join(os.path.dirname(__file__), "test.tsv")
 test_file_xml = os.path.join(os.path.dirname(__file__), "export.xml")
 test_file_tsv = os.path.join(os.path.dirname(__file__), "export.tsv")
+test_file_missing_tsv = os.path.join(os.path.dirname(__file__), "exportMissing.tsv")
+
+
 test_columns = ("group_id", "Title", "Creator", "Place of Publication", "Date", "Coverage-Spatial", "Subject",
                 "Keyword", "Type",
                 "Dimensions", "Language", "Source", "Physical Location", "Bibliography",
@@ -82,12 +86,13 @@ def test_xml_doesnt_have_field(CDMdata_xml):
 
 
 def test_xml_len(CDMdata_xml):
-    assert len(CDMdata_xml) == 5
+    assert len(CDMdata_xml) == 9
 
 
 @pytest.fixture()
 def CDMdata_joined():
     return CDM_Metadata(test_file_xml, test_file_tsv)
+
 
 def test_joined_fields(CDMdata_joined):
 
@@ -148,3 +153,16 @@ def test_joined_fields(CDMdata_joined):
     fields = CDMdata_joined.fields
     for field in fields:
         assert field in joined_fields
+
+
+def test_joined_length(CDMdata_joined):
+    assert len(CDMdata_joined) == 9
+
+
+# @pytest.fixture()
+# def CDMdata_joined_missing():
+#     return CDM_Metadata(test_file_xml, test_file_missing_tsv)
+
+def test_joined_missing_exception():
+    with pytest.raises(MigrationTools.MetadataReader.RecordMismatch):
+        bad = CDM_Metadata(test_file_xml, test_file_missing_tsv)

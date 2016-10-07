@@ -83,3 +83,6 @@ def test_multiple_tags(CDMdata):
 def test_concat_multi_item(CDMdata):
     record = CDMdata.get_record(155)
     assert record["unmapped"] == "ALA0001389; University Archives, Room 19 Library; Drawer 3, Folder 8; RS 12/3/12; 2014-01-22"
+
+def test_len_parts(CDMdata):
+    assert len(list(CDMdata.parts())) == 9

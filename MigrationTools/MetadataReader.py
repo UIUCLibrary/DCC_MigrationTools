@@ -13,6 +13,10 @@ REMOVE_WSPACE_PATTERN = "\n\s*"
 # FullRecord = namedtuple("FullRecord", ["object_level", "item_level"])
 
 
+class RecordMismatch(Exception):
+    pass
+
+
 class FullRecord(MutableMapping):
     def __init__(self, object_level, item_level: list):
         assert isinstance(item_level, list)
@@ -279,7 +283,7 @@ def has_children(element: Element):
         return False
 
 
-def build_branch(branch: str, element: Element):
+def build_branch(branch: str, element: Element)->dict:
     results = dict()
     children = element.findall("{}".format(branch))
     if len(children) > 1:
@@ -313,19 +317,13 @@ class cdm_metadata_xml(_CDM_md_base):
         return fieldnames, records
 
     @staticmethod
-    def build_record(xml_element_record: Element, field_names):
+    def build_record(xml_element_record: Element, field_names)->defaultdict(list):
         metadata = defaultdict(list, {key: [] for key in field_names})
 
-        # TODO: build_record
-
         for element in xml_element_record:
-            # current_value = str(record[element.tag])
             if element.text is not None:
                 metadata[element.tag].append(cleanup_string(element.text))
-            # if len(current_value) > 0:
-            #     current_value += ";"
-            # if element.text:
-            #     record[element.tag] = current_value + element.text
+
 
         pages_records = xml_element_record.findall("structure/page")
         if len(pages_records) == 0:
@@ -337,7 +335,7 @@ class cdm_metadata_xml(_CDM_md_base):
         return new_record
 
     @staticmethod
-    def build_page_metadata(page: Element):
+    def build_page_metadata(page: Element)->dict:
         new_page = defaultdict(list)
         # new_page[]
         foo = page.find("pagemetadata")
@@ -347,10 +345,10 @@ class cdm_metadata_xml(_CDM_md_base):
         new_page['pagetitle'].append(page.find("pagetitle").text)
         new_page['pageptr'].append(page.find("pageptr").text)
 
-        return new_page
+        return dict(new_page)
 
     @staticmethod
-    def get_field_names(records):
+    def get_field_names(records)->set:
         field_names = set()
         for record in records:
             for x in record:
@@ -366,6 +364,7 @@ class cdm_metadata_xml(_CDM_md_base):
         :param contentDM_number: The ContentDM number
         :returns:   dict -- Single item record
         """
+
         for record in self.records:
             if record.data['cdmid'][0] == str(contentDM_number):
                 return record
@@ -373,6 +372,23 @@ class cdm_metadata_xml(_CDM_md_base):
 
     def __iter__(self):
         return iter(self.records)
+
+    def parts(self):
+        """Yields records that are broken down into a single part. Meaning, the object level and the item level are returned
+        separately.
+
+        .. Note::
+
+            This is really only useful for matching the size of records with the size of the TSV file.
+
+        :yields: list of dictionary objects.
+
+        """
+
+        for record in self.records:
+            yield dict(record.data)
+            for page in record.pages:
+                yield page
 
 
 def CDM_Metadata_factory(filename):
@@ -457,6 +473,19 @@ class Record(MutableMapping):
 
 
 class CDM_Metadata:
+    """This is the high level function for using the metadata exports from CONTENTdm. It's meant to be iterated over
+     with a for loop.
+
+     You can use either a single xml or tsv exported filed, or you one of each. When used both, the class will attempt
+     to join the data together.
+
+    .. note::
+
+       As of now, CONTENTdm tsv files will need to have the extension .tsv to work. At the time of writing this, tsv
+       files exported from CONTENTdm are saved with the .txt extension. As a workaround, change the extension of these
+       files from .txt to .tsv.
+
+    """
     def __init__(self, *files):
         tsv_file = None
         xml_file = None
@@ -502,6 +531,7 @@ class CDM_Metadata:
             self._data = CDM_Metadata.create_full(xml_metadata=self.xml_metadata)
         else:
             raise AttributeError("Need a valid xml, tsv or both")
+        pass
 
     @property
     def fields(self):
@@ -510,15 +540,17 @@ class CDM_Metadata:
 
         for record in self._data:
             all_fields.update(record.fields)
-
-            # all_fields.update(record.object_level.fields)
         return list(all_fields)
 
     def has_field(self, field):
         return field in self.fields
 
     def __len__(self):
-        return len(self._data)
+        items = 0
+        for item in self._data:
+            items += len(item.item_level)
+
+        return len(self._data) + items
 
     def __iter__(self):
         for i, object_record in enumerate(self._data):
@@ -531,23 +563,45 @@ class CDM_Metadata:
                 for key in santized.keys():
                     if key in object_info.keys():
                         del object_info[key]
-                # object_info = {k:v for k, v in object_record if k not in santized.keys()}
+
                 matching = self.tsv_metadata.get_record(int(santized['pageptr']))
                 item = {**object_info, **santized, **matching}
                 item['group_id'] = i
                 yield item
 
-        # return iter(self._data)
-
 
     @staticmethod
-    def create_full(xml_metadata=None, tsv_metadata=None)->FullRecord:
+    def create_full(xml_metadata: cdm_metadata_xml=None, tsv_metadata: cdm_metadata_tsv=None)->FullRecord:
+        """Factory function that takes a xml file and/or a tsv metadata object and builds a FullRecord object.
+        If only a xml_metadata or a tsv_metadata object is give, the FullRecord is simply constructed based on that
+        data alone. However if both are used in the, the data is joined.
+
+        :param xml_metadata: cdm_metadata_xml object contained the data for a CONTENTdm xml export
+        :type xml_metadata: cdm_metadata_xml
+        :param tsv_metadata: cdm_metadata_tsv object contained the data for a CONTENTdm tsv export
+        :type tsv_metadata: cdm_metadata_tsv
+
+        :returns: FullRecord object containing the data
+
+        """
+
         if xml_metadata is None and tsv_metadata is None:
             raise ValueError("Needs either xml_metadata or tsv_metadata")
 
         full_records = []
         if xml_metadata is not None:
             if tsv_metadata is not None:
+                # If an XML file and a TSV file is given, Join them
+
+                # Check that the number of lines in the TSV match the number of XML records plus
+                # any elements that contains pages.
+                # Note: This doesn't match to see if these records matches.
+                total_xml_parts = len(list(xml_metadata.parts()))
+                total_tsv_records = len(tsv_metadata)
+                if total_tsv_records != total_xml_parts:
+                    raise RecordMismatch
+
+
                 for record in xml_metadata:
                     pages = []
                     cdmid = int(record['cdmid'])
@@ -558,6 +612,7 @@ class CDM_Metadata:
                             pages.append(page)
 
                     full_records.append(FullRecord(Record(object_level), pages))
+
             else:
                 for record in xml_metadata:
                     pages = record.pages
@@ -565,5 +620,4 @@ class CDM_Metadata:
                     full_records.append(FullRecord(object_level, pages))
         elif tsv_metadata is not None:
             full_records = [FullRecord(Record(rec), []) for rec in tsv_metadata]
-            # full_records = [FullRecord(Record(rec), None) for rec in tsv_metadata]
         return full_records

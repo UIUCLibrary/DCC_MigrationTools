@@ -556,7 +556,7 @@ class CDM_Metadata:
         for i, object_record in enumerate(self._data):
             object_record['group_id'] = i
             yield object_record
-            for item in object_record.item_level:
+            for page_number, item in enumerate(object_record.item_level):
                 santized = {k: ";".join(v) for k, v in item.items()}
 
                 object_info = dict(object_record.object_level)
@@ -567,6 +567,7 @@ class CDM_Metadata:
                 matching = self.tsv_metadata.get_record(int(santized['pageptr']))
                 item = {**object_info, **santized, **matching}
                 item['group_id'] = i
+                item['XML_order'] = page_number + 1
                 yield item
 
 
